@@ -10,7 +10,9 @@
     "build": "cd frontend && npm run build",
     "install-deps": "npm install && cd frontend && npm install",
     "seed": "node backend/seeds/seedDatabase.js",
-    "db:reset": "node backend/seeds/seedDatabase.js"
+    "db:reset": "node backend/seeds/seedDatabase.js",
+    "start": "node backend/server.js",
+    "heroku-postbuild": "cd frontend && npm install && npm run build"
   },
   "dependencies": {
     "axios": "^1.6.0",
