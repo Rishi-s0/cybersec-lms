@@ -18,6 +18,10 @@ frontend/dist/
 build/
 dist/
 
+# Large video files (too big for GitHub)
+frontend/public/videos/*.mp4
+*.mp4
+
 # Logs
 logs
 *.log

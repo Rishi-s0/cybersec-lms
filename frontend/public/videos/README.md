@@ -1,58 +1,46 @@
-# Video Files for Cybersecurity LMS
+# Video Content
 
-## Download Instructions
+This directory contains course video files for the CyberSec LMS.
 
-Download these videos from YouTube and save them in this folder with the exact names specified:
+## Video Files (Not in Repository)
 
-### Lesson 1: What is Cybersecurity?
-- **YouTube URL**: https://www.youtube.com/watch?v=inWWhr5tnEA
-- **Save as**: `lesson1-cybersecurity-intro.mp4`
-- **Topic**: Introduction to Cybersecurity fundamentals
+Due to GitHub's file size limitations, the actual video files are not stored in this repository. 
 
-### Lesson 2: Common Cyber Threats
-- **YouTube URL**: https://www.youtube.com/watch?v=Dk-ZqQ-bfy4
-- **Save as**: `lesson2-cyber-threats.mp4`
-- **Topic**: Common cyber threats and attack vectors
+### For Development:
+1. Create your own video content or use placeholder videos
+2. Name them according to the pattern: `lesson[number]-[topic].mp4`
+3. Place them in this directory
 
-## How to Download YouTube Videos
+### For Production:
+- Use a CDN service (AWS S3, Cloudinary, etc.) for video hosting
+- Update the video URLs in the course content
+- Consider using video streaming services for better performance
 
-### Option 1: Using yt-dlp (Recommended)
-```bash
-# Install yt-dlp
-pip install yt-dlp
+### Expected Video Files:
+- `lesson1-cybersecurity-intro.mp4`
+- `lesson2-cyber-threats.mp4` 
+- `lesson3-security-best-practices.mp4`
+- `lesson4-incident-response.mp4`
+- `lesson5-security-mindset.mp4`
 
-# Download Lesson 1
-yt-dlp -f "best[ext=mp4]" -o "lesson1-cybersecurity-intro.mp4" https://www.youtube.com/watch?v=inWWhr5tnEA
+### Alternative Solutions:
+1. **YouTube Integration**: Upload videos to YouTube and embed them
+2. **Vimeo Integration**: Use Vimeo for professional video hosting
+3. **CDN Storage**: Use AWS S3 + CloudFront for video delivery
+4. **Video Streaming**: Implement adaptive streaming for better performance
 
-# Download Lesson 2
-yt-dlp -f "best[ext=mp4]" -o "lesson2-cyber-threats.mp4" https://www.youtube.com/watch?v=Dk-ZqQ-bfy4
-```
+## Note for Contributors
 
-### Option 2: Using Online Downloader
-1. Go to: https://y2mate.com or https://savefrom.net
-2. Paste the YouTube URL
-3. Select MP4 format (720p or 1080p recommended)
-4. Download and rename to the exact filename above
+If you're contributing to this project and need video content, you can:
+1. Create your own educational videos
+2. Use Creative Commons licensed content
+3. Record screen captures for technical demonstrations
+4. Use placeholder videos during development
 
-### Option 3: Using Browser Extension
-- Install "Video DownloadHelper" for Firefox/Chrome
-- Navigate to the YouTube video
-- Click the extension icon and download as MP4
+## Original Video Sources
 
-## File Structure
-After downloading, your folder should look like:
-```
-cybersec-lms/frontend/public/videos/
-├── README.md (this file)
-├── lesson1-cybersecurity-intro.mp4
-└── lesson2-cyber-threats.mp4
-```
+The original implementation used these YouTube videos as references:
+- Lesson 1: Introduction to Cybersecurity fundamentals
+- Lesson 2: Common cyber threats and attack vectors
 
-## Important Notes
-- Use MP4 format for best compatibility
-- Recommended resolution: 720p or 1080p
-- Keep file sizes reasonable (under 100MB if possible)
-- Ensure videos are properly named (exact match required)
-
-## After Downloading
-Once you've downloaded and placed the videos in this folder, run the database update script to point lessons to these local videos instead of YouTube.
+For your own implementation, create or source appropriate educational content.
