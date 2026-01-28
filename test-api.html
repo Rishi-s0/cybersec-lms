@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <style>
+        body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #1f6f3e; }
+        .error { background: #6f1f1f; }
+        .info { background: #1f3f6f; }
+    </style>
+</head>
+<body>
+    <h1>HACKADEMY API Status Checker</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        async function testAPI() {
+            const endpoints = [
+                'http://localhost:5000/api/health',
+                'http://localhost:5000/api/threats/stats',
+                'http://localhost:5000/api/threats'
+            ];
+            
+            results.innerHTML = '<div class="info">Testing API endpoints...</div>';
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint);
+                    const data = await response.json();
+                    results.innerHTML += `
+                        <div class="status success">
+                            ✅ ${endpoint} - Status: ${response.status}
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } catch (error) {
+                    results.innerHTML += `
+                        <div class="status error">
+                            ❌ ${endpoint} - Error: ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        testAPI();
+        setInterval(testAPI, 10000); // Test every 10 seconds
+    </script>
+</body>
+</html>
