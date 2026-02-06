@@ -1,20 +1,23 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const auth = require('../middleware/auth');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+// 📦 IMPORT DEPENDENCIES
+const express = require('express');                    // Web framework
+const jwt = require('jsonwebtoken');                   // JWT token generation
+const crypto = require('crypto');                      // Cryptographic functions
+const { body, validationResult } = require('express-validator');  // Input validation
+const User = require('../models/User');                // User model
+const auth = require('../middleware/auth');            // Authentication middleware
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');  // Email service
 
 const router = express.Router();
 
-// Register
+// 📝 REGISTER ROUTE: Create new user account with email verification
 router.post('/register', [
-  body('username').isLength({ min: 3 }).trim(),
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 })
+  // 🔍 INPUT VALIDATION: Validate registration data
+  body('username').isLength({ min: 3 }).trim(),        // Username min 3 chars
+  body('email').isEmail().normalizeEmail(),            // Valid email format
+  body('password').isLength({ min: 6 })                // Password min 6 chars
 ], async (req, res) => {
   try {
+    // ✅ CHECK VALIDATION RESULTS
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -22,14 +25,14 @@ router.post('/register', [
 
     const { username, email, password, role } = req.body;
 
-    // SECURITY: Force all public registrations to be students only
+    // 🚫 CRITICAL SECURITY: Force all public registrations to be students only
     // Admin accounts must be created manually via:
     // 1. Database seeding
     // 2. Admin panel (by existing admin)
     // 3. Command line script
     const userRole = 'student';
 
-    // Check if user exists
+    // 🔍 CHECK IF USER EXISTS: Prevent duplicate accounts
     const existingUser = await User.findOne({
       $or: [{ email }, { username }]
     });
@@ -38,24 +41,24 @@ router.post('/register', [
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Generate OTP
+    // 🔢 GENERATE OTP: Create 6-digit verification code
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    const otpExpiry = Date.now() + 600000; // 10 minutes
+    const otpExpiry = Date.now() + 600000; // ⏱️ 10 minutes expiry
 
-    // Create user (unverified)
+    // 👤 CREATE USER: Save unverified user to database
     const user = new User({
       username,
       email,
       password,
-      role: userRole, // Always 'student' for security
-      isEmailVerified: false,
-      emailVerificationOTP: otp,
-      emailVerificationExpires: otpExpiry
+      role: userRole,                      // Always 'student' for security
+      isEmailVerified: false,              // Require email verification
+      emailVerificationOTP: otp,           // Store OTP for verification
+      emailVerificationExpires: otpExpiry  // OTP expiration time
     });
 
     await user.save();
 
-    // Send verification email
+    // 📧 SEND VERIFICATION EMAIL: Email OTP to user
     await sendVerificationEmail(email, otp);
 
     res.status(201).json({
@@ -69,12 +72,14 @@ router.post('/register', [
   }
 });
 
-// Login
+// 🔐 LOGIN ROUTE: Authenticate user and generate JWT token
 router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
-  body('password').exists()
+  // 🔍 INPUT VALIDATION
+  body('email').isEmail().normalizeEmail(),            // Valid email format
+  body('password').exists()                            // Password must exist
 ], async (req, res) => {
   try {
+    // ✅ CHECK VALIDATION RESULTS
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -82,19 +87,19 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Find user (include password for comparison)
+    // 🔍 FIND USER: Look up user by email (include password for comparison)
     const user = await User.findOne({ email }).select('+password +isEmailVerified');
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
+    // 🔒 CHECK PASSWORD: Verify password matches stored hash
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if email is verified (only for manual registrations)
+    // ✉️ CHECK EMAIL VERIFICATION: Block unverified users (manual registration only)
     if (!user.googleId && !user.githubId && !user.isEmailVerified) {
       return res.status(400).json({ 
         message: 'Please verify your email before logging in',
@@ -104,13 +109,14 @@ router.post('/login', [
       });
     }
 
-    // Generate JWT
+    // 🎫 GENERATE JWT TOKEN: Create secure authentication token
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '7d' }
+      { userId: user._id, role: user.role },          // Payload: user ID and role
+      process.env.JWT_SECRET || 'fallback_secret',    // Secret key from environment
+      { expiresIn: '7d' }                             // Token expires in 7 days
     );
 
+    // ✅ SEND RESPONSE: Return token and user data
     res.json({
       token,
       user: {
@@ -125,13 +131,16 @@ router.post('/login', [
   }
 });
 
-// Get current user
+// 👤 GET CURRENT USER: Retrieve authenticated user's information
 router.get('/me', auth, async (req, res) => {
   try {
+    // 🔍 FIND USER: Get user by ID from JWT token (password excluded)
     const user = await User.findById(req.userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    
+    // ✅ SEND USER DATA: Return user information
     res.json({
       user: {
         id: user._id,
@@ -147,12 +156,14 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// Verify Email with OTP
+// ✉️ VERIFY EMAIL WITH OTP: Confirm user's email address
 router.post('/verify-email', [
-  body('email').isEmail().normalizeEmail(),
-  body('otp').isLength({ min: 6, max: 6 }).isNumeric()
+  // 🔍 INPUT VALIDATION
+  body('email').isEmail().normalizeEmail(),                    // Valid email format
+  body('otp').isLength({ min: 6, max: 6 }).isNumeric()        // 6-digit numeric OTP
 ], async (req, res) => {
   try {
+    // ✅ CHECK VALIDATION RESULTS
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -160,30 +171,31 @@ router.post('/verify-email', [
 
     const { email, otp } = req.body;
 
-    // Find user with matching email and OTP
+    // 🔍 FIND USER: Look for user with matching email, OTP, and valid expiry
     const user = await User.findOne({ 
       email,
       emailVerificationOTP: otp,
-      emailVerificationExpires: { $gt: Date.now() }
+      emailVerificationExpires: { $gt: Date.now() }  // OTP not expired
     });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired verification code' });
     }
 
-    // Verify the user
+    // ✅ VERIFY USER: Mark email as verified and clear OTP fields
     user.isEmailVerified = true;
-    user.emailVerificationOTP = undefined;
-    user.emailVerificationExpires = undefined;
+    user.emailVerificationOTP = undefined;           // Remove OTP
+    user.emailVerificationExpires = undefined;       // Remove expiry
     await user.save();
 
-    // Generate JWT token for immediate login
+    // 🎫 GENERATE JWT TOKEN: Auto-login user after verification
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '7d' }
     );
 
+    // ✅ SEND RESPONSE: Return token and user data
     res.json({
       message: 'Email verified successfully!',
       token,
@@ -200,11 +212,13 @@ router.post('/verify-email', [
   }
 });
 
-// Resend Verification OTP
+// 🔄 RESEND VERIFICATION OTP: Send new verification code
 router.post('/resend-verification', [
+  // 🔍 INPUT VALIDATION
   body('email').isEmail().normalizeEmail()
 ], async (req, res) => {
   try {
+    // ✅ CHECK VALIDATION RESULTS
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -212,7 +226,7 @@ router.post('/resend-verification', [
 
     const { email } = req.body;
 
-    // Find unverified user
+    // 🔍 FIND UNVERIFIED USER: Only resend for unverified accounts
     const user = await User.findOne({ 
       email,
       isEmailVerified: false
@@ -222,15 +236,16 @@ router.post('/resend-verification', [
       return res.status(400).json({ message: 'User not found or already verified' });
     }
 
-    // Generate new OTP
+    // 🔢 GENERATE NEW OTP: Create fresh 6-digit code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = Date.now() + 600000; // 10 minutes
+    const otpExpiry = Date.now() + 600000; // ⏱️ 10 minutes expiry
 
+    // 💾 UPDATE USER: Save new OTP and expiry
     user.emailVerificationOTP = otp;
     user.emailVerificationExpires = otpExpiry;
     await user.save();
 
-    // Send verification email
+    // 📧 SEND EMAIL: Email new OTP to user
     await sendVerificationEmail(email, otp);
 
     res.json({ message: 'Verification code resent successfully!' });
@@ -240,11 +255,13 @@ router.post('/resend-verification', [
   }
 });
 
-// Forgot Password
+// 🔑 FORGOT PASSWORD: Request password reset link
 router.post('/forgot-password', [
+  // 🔍 INPUT VALIDATION
   body('email').isEmail().normalizeEmail()
 ], async (req, res) => {
   try {
+    // ✅ CHECK VALIDATION RESULTS
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -252,23 +269,23 @@ router.post('/forgot-password', [
 
     const { email } = req.body;
 
-    // Find user
+    // 🔍 FIND USER: Look up user by email
     const user = await User.findOne({ email });
     if (!user) {
-      // Don't reveal if user exists or not for security
+      // 🛡️ SECURITY: Don't reveal if user exists or not (prevents email enumeration)
       return res.json({ message: 'If an account with that email exists, we have sent a password reset link.' });
     }
 
-    // Generate reset token
+    // 🔐 GENERATE RESET TOKEN: Create secure random token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    const resetTokenExpiry = Date.now() + 3600000; // ⏱️ 1 hour expiry
 
-    // Save reset token to user
+    // 💾 SAVE RESET TOKEN: Store token and expiry in user document
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpiry;
     await user.save();
 
-    // Send password reset email
+    // 📧 SEND EMAIL: Email reset link to user
     await sendPasswordResetEmail(email, resetToken);
 
     res.json({ message: 'If an account with that email exists, we have sent a password reset link.' });
@@ -278,11 +295,13 @@ router.post('/forgot-password', [
   }
 });
 
-// Reset Password
+// 🔄 RESET PASSWORD: Set new password using reset token
 router.post('/reset-password/:token', [
-  body('password').isLength({ min: 6 })
+  // 🔍 INPUT VALIDATION
+  body('password').isLength({ min: 6 })                // Password min 6 chars
 ], async (req, res) => {
   try {
+    // ✅ CHECK VALIDATION RESULTS
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -291,20 +310,20 @@ router.post('/reset-password/:token', [
     const { token } = req.params;
     const { password } = req.body;
 
-    // Find user with valid reset token
+    // 🔍 FIND USER: Look for user with valid reset token
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordExpires: { $gt: Date.now() }        // Token not expired
     });
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
-    // Update password
+    // 🔒 UPDATE PASSWORD: Set new password (will be auto-hashed by pre-save hook)
     user.password = password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    user.resetPasswordToken = undefined;              // Clear reset token
+    user.resetPasswordExpires = undefined;            // Clear expiry
     await user.save();
 
     res.json({ message: 'Password has been reset successfully' });
@@ -314,16 +333,16 @@ router.post('/reset-password/:token', [
   }
 });
 
-module.exports = router;
-
-// Verify JWT token
+// 🔍 VERIFY JWT TOKEN: Check if token is valid and return user data
 router.get('/verify', auth, async (req, res) => {
   try {
+    // 🔍 FIND USER: Get user by ID from JWT token (password excluded)
     const user = await User.findById(req.userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // ✅ SEND USER DATA: Return user information
     res.json({
       user: {
         id: user._id,
@@ -338,3 +357,6 @@ router.get('/verify', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// 📤 EXPORT ROUTER: Make routes available to server
+module.exports = router;

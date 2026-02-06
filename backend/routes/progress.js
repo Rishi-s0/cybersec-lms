@@ -1,17 +1,19 @@
-const express = require('express');
-const Progress = require('../models/Progress');
-const Course = require('../models/Course');
-const auth = require('../middleware/auth');
+// 📦 IMPORT DEPENDENCIES
+const express = require('express');                    // Web framework
+const Progress = require('../models/Progress');        // Progress model
+const Course = require('../models/Course');            // Course model
+const auth = require('../middleware/auth');            // Authentication middleware
 
 const router = express.Router();
 
-// Get user's progress for a course
+// 📊 GET USER'S PROGRESS FOR A COURSE: Retrieve progress data for specific course
 router.get('/course/:courseId', auth, async (req, res) => {
   try {
+    // 🔍 FIND PROGRESS: Get progress record with course details
     const progress = await Progress.findOne({
       user: req.userId,
       course: req.params.courseId
-    }).populate('course', 'title lessons');
+    }).populate('course', 'title lessons');  // Include course title and lessons
 
     if (!progress) {
       return res.status(404).json({ message: 'Progress not found' });
@@ -23,7 +25,7 @@ router.get('/course/:courseId', auth, async (req, res) => {
   }
 });
 
-// Mark lesson as completed
+// ✅ MARK LESSON AS COMPLETED: Update progress when user finishes a lesson
 router.post('/lesson/:courseId/:lessonId/complete', auth, async (req, res) => {
   try {
     const { score } = req.body;
@@ -34,6 +36,7 @@ router.post('/lesson/:courseId/:lessonId/complete', auth, async (req, res) => {
       lessonId: req.params.lessonId
     });
 
+    // 🔍 FIND PROGRESS: Get user's progress for this course
     let progress = await Progress.findOne({
       user: req.userId,
       course: req.params.courseId
@@ -44,12 +47,13 @@ router.post('/lesson/:courseId/:lessonId/complete', auth, async (req, res) => {
       return res.status(404).json({ message: 'Progress not found' });
     }
 
-    // Check if lesson already completed
+    // 🔍 CHECK IF ALREADY COMPLETED: Avoid duplicate entries
     const existingLesson = progress.completedLessons.find(
       lesson => lesson.lessonId === req.params.lessonId
-    );
+    });
 
     if (!existingLesson) {
+      // ➕ ADD NEW COMPLETION: Add lesson to completed list
       progress.completedLessons.push({
         lessonId: req.params.lessonId,
         score: score || null,
@@ -57,31 +61,30 @@ router.post('/lesson/:courseId/:lessonId/complete', auth, async (req, res) => {
       });
       console.log('Added lesson to completed list');
     } else {
-      // Update score if provided
+      // 🔄 UPDATE SCORE: Update existing lesson score if provided
       if (score !== undefined) {
         existingLesson.score = score;
       }
       console.log('Lesson already completed, updated score');
     }
 
-    // Calculate overall progress
+    // 🧮 CALCULATE OVERALL PROGRESS: Update completion percentage
     const course = await Course.findById(req.params.courseId);
     const totalLessons = course.lessons.length;
     const completedLessons = progress.completedLessons.length;
     progress.overallProgress = Math.round((completedLessons / totalLessons) * 100);
 
-    // Check if course is completed
+    // 🏆 CHECK IF COURSE COMPLETED: Mark course as completed if 100%
     if (progress.overallProgress === 100 && !progress.isCompleted) {
       progress.isCompleted = true;
       progress.completedAt = new Date();
     }
 
+    // 📅 UPDATE LAST ACCESSED: Track user activity
     progress.lastAccessedAt = new Date();
     await progress.save();
 
-
-
-    // Check certificate eligibility
+    // 🎓 CHECK CERTIFICATE ELIGIBILITY: Auto-generate certificate if eligible
     await checkCertificateEligibility(progress, course);
 
     console.log('Progress saved successfully:', {
