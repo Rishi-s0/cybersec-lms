@@ -374,7 +374,8 @@ th sliding navigation indicator */
     transition: all 150ms ease-in;
 }
 
-* Scroll Progress Bar Animations */ .scroll-progress-bar {
+/* Scroll Progress Bar Animations */
+.scroll-progress-bar {
     background: linear-gradient(90deg, #9fef00, #b8ff29, #00ffff);
     background-size: 200% 100%;
     animation: scroll-gradient 3s ease-in-out infinite;
@@ -627,7 +628,8 @@ t Map HTB Styling */
     box-shadow: 0 0 8px rgba(159, 239, 0, 0.4);
 }
 
-* Enhanced filter controls for threat map */ .filter-controls input[type="checkbox"] {
+/* Enhanced filter controls for threat map */
+.filter-controls input[type="checkbox"] {
     appearance: none;
     width: 16px;
     height: 16px;
