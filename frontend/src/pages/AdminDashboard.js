@@ -17,6 +17,7 @@ import {
   Target
 } from 'lucide-react';
 import CourseForm from '../components/CourseForm';
+import API_URL from '../config/api';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -50,9 +51,9 @@ const AdminDashboard = () => {
 
       // Fetch all collections
       const [usersRes, coursesRes, progressRes] = await Promise.all([
-        fetch('/api/admin/database/users', { headers }),
-        fetch('/api/admin/database/courses', { headers }),
-        fetch('/api/admin/database/progress', { headers })
+        fetch(`${API_URL}/api/admin/database/users`, { headers }),
+        fetch(`${API_URL}/api/admin/database/courses`, { headers }),
+        fetch(`${API_URL}/api/admin/database/progress`, { headers })
       ]);
 
       const dbData = {
@@ -77,7 +78,7 @@ const AdminDashboard = () => {
   const handleResetSampleData = async () => {
     if (window.confirm('Are you sure you want to reset all data to sample data? This will delete all existing data!')) {
       try {
-        const response = await fetch('/api/admin/reset-sample-data', {
+        const response = await fetch(`${API_URL}/api/admin/reset-sample-data`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -100,18 +101,19 @@ const AdminDashboard = () => {
 
   const fetchAdminData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
       // Fetch users
-      const usersResponse = await fetch('/api/users');
+      const usersResponse = await fetch(`${API_URL}/api/admin/users`, { headers });
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         setUsers(usersData);
       }
 
       // Fetch courses (admin route to get all courses including unpublished)
-      const coursesResponse = await fetch('/api/courses/admin/all', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const coursesResponse = await fetch(`${API_URL}/api/courses/admin/all`, {
+        headers
       });
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
@@ -142,14 +144,25 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    const user = users.find(u => u._id === userId);
+    if (window.confirm(`Are you sure you want to delete user "${user?.username}"?\n\nThis will permanently delete:\n- User account\n- All progress records\n- All forum posts and replies\n\nThis action cannot be undone.`)) {
       try {
-        const response = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+        const response = await fetch(`${API_URL}/api/admin/users/${userId}`, { 
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         if (response.ok) {
           setUsers(users.filter(u => u._id !== userId));
+          alert('User deleted successfully!');
+        } else {
+          const errorData = await response.json();
+          alert(`Failed to delete user: ${errorData.message || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Error deleting user:', error);
+        alert('Error deleting user. Please try again.');
       }
     }
   };
@@ -160,7 +173,7 @@ const AdminDashboard = () => {
     
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await fetch(`/api/courses/${courseId}`, { 
+        const response = await fetch(`${API_URL}/api/courses/${courseId}`, { 
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -187,7 +200,7 @@ const AdminDashboard = () => {
     try {
       // Get current user ID for instructor field
       const token = localStorage.getItem('token');
-      const userResponse = await fetch('/api/auth/me', {
+      const userResponse = await fetch(`${API_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const userData = await userResponse.json();
@@ -200,7 +213,7 @@ const AdminDashboard = () => {
         instructor: instructorId
       };
       
-      const url = editingCourse ? `/api/courses/${editingCourse._id}` : '/api/courses';
+      const url = editingCourse ? `${API_URL}/api/courses/${editingCourse._id}` : `${API_URL}/api/courses`;
       const method = editingCourse ? 'PUT' : 'POST';
       
       const response = await fetch(url, {

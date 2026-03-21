@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
@@ -27,6 +28,19 @@ import CertificateView from './pages/CertificateView';
 import OAuthCallback from './pages/OAuthCallback';
 import SearchResults from './pages/SearchResults';
 
+// Scroll to top on every route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 0);
+  }, [pathname]);
+  return null;
+}
+
 function App() {
   const { user, loading } = useAuth();
 
@@ -46,6 +60,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col">
+        <ScrollToTop />
         <ScrollProgress />
         <Navbar />
         <NotificationToast />

@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import API_URL from '../config/api';
 
 const DiscussionForum = ({ courseId, lessonId = null }) => {
   const { user } = useAuth();
@@ -39,7 +40,7 @@ const DiscussionForum = ({ courseId, lessonId = null }) => {
   const fetchDiscussions = async () => {
     try {
       setLoading(true);
-      let url = `/api/discussions/course/${courseId}`;
+      let url = `${API_URL}/api/discussions/course/${courseId}`;
       const params = new URLSearchParams();
       
       if (lessonId) params.append('lessonId', lessonId);
@@ -70,7 +71,7 @@ const DiscussionForum = ({ courseId, lessonId = null }) => {
     e.preventDefault();
     
     try {
-      const response = await fetch('/api/discussions', {
+      const response = await fetch(`${API_URL}/api/discussions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +99,7 @@ const DiscussionForum = ({ courseId, lessonId = null }) => {
     if (!replyMessage.trim()) return;
 
     try {
-      const response = await fetch(`/api/discussions/${discussionId}/reply`, {
+      const response = await fetch(`${API_URL}/api/discussions/${discussionId}/reply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +122,7 @@ const DiscussionForum = ({ courseId, lessonId = null }) => {
 
   const toggleLike = async (discussionId) => {
     try {
-      const response = await fetch(`/api/discussions/${discussionId}/like`, {
+      const response = await fetch(`${API_URL}/api/discussions/${discussionId}/like`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

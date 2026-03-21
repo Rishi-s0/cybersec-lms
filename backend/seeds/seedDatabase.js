@@ -8,7 +8,7 @@ require('dotenv').config();
 const seedDatabase = async () => {
   try {
     console.log('🌱 Starting database seeding...');
-    
+
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
@@ -21,10 +21,11 @@ const seedDatabase = async () => {
 
     // Create sample users
     const hashedPassword = await bcrypt.hash('password123', 10);
-    
+
     const users = await User.create([
       {
         username: 'admin',
+        name: 'Admin User',
         email: 'admin@hackademy.com',
         password: hashedPassword,
         role: 'admin',
@@ -39,6 +40,7 @@ const seedDatabase = async () => {
       // Removed instructor role - only admin and students
       {
         username: 'student1',
+        name: 'Alice Learner',
         email: 'student@hackademy.com',
         password: hashedPassword,
         role: 'student',
@@ -52,6 +54,7 @@ const seedDatabase = async () => {
       },
       {
         username: 'student2',
+        name: 'Bob Security',
         email: 'student2@hackademy.com',
         password: hashedPassword,
         role: 'student',
@@ -69,7 +72,7 @@ const seedDatabase = async () => {
 
     // Create sample courses - assign to admin
     const admin = users.find(u => u.role === 'admin');
-    
+
     const courses = await Course.create([
       {
         title: 'Introduction to Cybersecurity',
@@ -255,11 +258,11 @@ const seedDatabase = async () => {
     for (const student of students) {
       // Enroll students in courses
       const enrolledCourses = courses.slice(0, Math.floor(Math.random() * 3) + 2);
-      
+
       for (const course of enrolledCourses) {
         const progress = Math.floor(Math.random() * 100);
         const isCompleted = progress === 100 || Math.random() > 0.7;
-        
+
         progressRecords.push({
           user: student._id,
           course: course._id,
@@ -280,7 +283,7 @@ const seedDatabase = async () => {
           });
         }
       }
-      
+
       await student.save();
     }
 

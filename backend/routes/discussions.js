@@ -109,7 +109,7 @@ router.post('/:id/reply', auth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    await discussion.addReply(req.user.id, message, isInstructor);
+    await discussion.addReply(req.user.id, message, isAdmin);
 
     const updatedDiscussion = await Discussion.findById(req.params.id)
       .populate('userId', 'name username profile.firstName profile.lastName')

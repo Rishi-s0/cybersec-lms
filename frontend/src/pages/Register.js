@@ -11,12 +11,23 @@ const Register = () => {
     confirmPassword: '',
     role: 'student'
   });
-  const [error, setError] = useState('');
+  
+  // Check for persisted error on mount
+  const persistedError = localStorage.getItem('registerError');
+  const [error, setError] = useState(persistedError || '');
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState({ google: false, github: false });
+  const [forceUpdate, setForceUpdate] = useState(0);
   
   const { register } = useAuth();
   const navigate = useNavigate();
+  
+  // Clear persisted error when component mounts
+  React.useEffect(() => {
+    if (persistedError) {
+      // Keep error visible for user to see
+    }
+  }, []);
 
   const handleOAuthClick = (provider) => {
     setOauthLoading(prev => ({ ...prev, [provider]: true }));
@@ -35,48 +46,253 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (loading) {
+      return;
+    }
+    
+    // Clear any previous errors
     setError('');
+    localStorage.removeItem('registerError');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      const errorMsg = 'Passwords do not match';
+      setError(errorMsg);
+      localStorage.setItem('registerError', errorMsg);
+      setForceUpdate(prev => prev + 1);
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      const errorMsg = 'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character (@$!%*?&)';
+      setError(errorMsg);
+      localStorage.setItem('registerError', errorMsg);
+      setForceUpdate(prev => prev + 1);
       return;
     }
 
     setLoading(true);
 
-    const result = await register({
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      role: formData.role
-    });
-    
-    if (result.success) {
-      if (result.requiresVerification) {
-        // Redirect to email verification page
-        navigate('/verify-email', { 
-          state: { 
-            email: formData.email,
-            userId: result.userId 
-          } 
-        });
+    try {
+      const result = await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      });
+      
+      if (result.success) {
+        // Clear any errors on success
+        localStorage.removeItem('registerError');
+        
+        if (result.requiresVerification) {
+          // Redirect to email verification page
+          navigate('/verify-email', { 
+            state: { 
+              email: formData.email,
+              userId: result.userId 
+            } 
+          });
+        } else {
+          // Direct login (shouldn't happen for manual registration now)
+          navigate('/dashboard');
+        }
       } else {
-        // Direct login (shouldn't happen for manual registration now)
-        navigate('/dashboard');
+        const errorMsg = result.error || 'Registration failed. Please try again.';
+        setError(errorMsg);
+        localStorage.setItem('registerError', errorMsg);
+        setForceUpdate(prev => prev + 1);
+        setLoading(false);
       }
-    } else {
-      setError(result.error);
+    } catch (err) {
+      console.error('Registration error:', err);
+      const errorMsg = 'An unexpected error occurred. Please try again.';
+      setError(errorMsg);
+      localStorage.setItem('registerError', errorMsg);
+      setForceUpdate(prev => prev + 1);
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
+    <>
+      {/* Error Modal Overlay */}
+      {error && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(8px)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={() => {
+            setError('');
+            localStorage.removeItem('registerError');
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: '#1a1f2e',
+              border: '2px solid #ef4444',
+              borderRadius: '16px',
+              padding: '2.5rem',
+              maxWidth: '480px',
+              width: '90%',
+              boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.25), 0 0 0 1px rgba(239, 68, 68, 0.1)',
+              animation: 'slideUp 0.3s ease-out',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Decorative corner accents */}
+            <div style={{
+              position: 'absolute',
+              top: '-2px',
+              left: '-2px',
+              width: '40px',
+              height: '40px',
+              borderTop: '3px solid #9fef00',
+              borderLeft: '3px solid #9fef00',
+              borderRadius: '16px 0 0 0'
+            }}></div>
+            <div style={{
+              position: 'absolute',
+              bottom: '-2px',
+              right: '-2px',
+              width: '40px',
+              height: '40px',
+              borderBottom: '3px solid #9fef00',
+              borderRight: '3px solid #9fef00',
+              borderRadius: '0 0 16px 0'
+            }}></div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              marginBottom: '2rem'
+            }}>
+              <div style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                borderRadius: '50%',
+                padding: '1rem',
+                marginRight: '1.25rem',
+                border: '2px solid rgba(239, 68, 68, 0.3)'
+              }}>
+                <AlertCircle style={{ 
+                  color: '#ef4444', 
+                  width: '28px', 
+                  height: '28px',
+                  filter: 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.5))'
+                }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ 
+                  color: '#f3f4f6', 
+                  fontSize: '1.5rem', 
+                  fontWeight: '700', 
+                  margin: '0 0 0.75rem 0',
+                  letterSpacing: '-0.025em',
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                }}>
+                  Registration Failed
+                </h3>
+                <p style={{ 
+                  color: '#fca5a5', 
+                  margin: 0,
+                  fontSize: '1rem',
+                  lineHeight: '1.6',
+                  fontWeight: '500'
+                }}>
+                  {error}
+                </p>
+              </div>
+            </div>
+
+            {/* Additional info */}
+            <div style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.05)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <p style={{
+                color: '#9ca3af',
+                fontSize: '0.875rem',
+                margin: 0,
+                lineHeight: '1.5'
+              }}>
+                {error.includes('already exists') 
+                  ? '💡 This email is already registered. Try logging in instead or use a different email address.'
+                  : '💡 Please check your information and try again. If the problem persists, contact support.'}
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setError('');
+                localStorage.removeItem('registerError');
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                padding: '1rem 1.5rem',
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '700',
+                fontSize: '1rem',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#dc2626';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 8px -1px rgba(0, 0, 0, 0.4), 0 4px 6px -1px rgba(0, 0, 0, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#ef4444';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)';
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Add keyframe animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
+      
     <div className="max-w-md mx-auto htb-card rounded-lg p-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-htb-gray-light matrix-text">Create Account</h2>
@@ -140,14 +356,26 @@ const Register = () => {
               onChange={handleChange}
               required
               className="htb-input w-full pl-10 pr-4 py-2 rounded-lg"
-              placeholder="Create a password (min 6 characters)"
+              placeholder="Min 8 chars, uppercase, number, special char"
             />
           </div>
           {formData.password && (
-            <div className="mt-1 text-xs">
-              <span className={`${formData.password.length >= 6 ? 'text-htb-green' : 'text-htb-red'}`}>
-                {formData.password.length >= 6 ? '✓' : '✗'} At least 6 characters
-              </span>
+            <div className="mt-1 text-xs space-y-1">
+              <div className={`${formData.password.length >= 8 ? 'text-htb-green' : 'text-htb-red'}`}>
+                {formData.password.length >= 8 ? '✓' : '✗'} At least 8 characters
+              </div>
+              <div className={`${/[A-Z]/.test(formData.password) ? 'text-htb-green' : 'text-htb-red'}`}>
+                {/[A-Z]/.test(formData.password) ? '✓' : '✗'} One uppercase letter
+              </div>
+              <div className={`${/[a-z]/.test(formData.password) ? 'text-htb-green' : 'text-htb-red'}`}>
+                {/[a-z]/.test(formData.password) ? '✓' : '✗'} One lowercase letter
+              </div>
+              <div className={`${/\d/.test(formData.password) ? 'text-htb-green' : 'text-htb-red'}`}>
+                {/\d/.test(formData.password) ? '✓' : '✗'} One number
+              </div>
+              <div className={`${/[@$!%*?&]/.test(formData.password) ? 'text-htb-green' : 'text-htb-red'}`}>
+                {/[@$!%*?&]/.test(formData.password) ? '✓' : '✗'} One special character (@$!%*?&)
+              </div>
             </div>
           )}
         </div>
@@ -177,23 +405,7 @@ const Register = () => {
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-htb-gray-light mb-2">
-            Role
-          </label>
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="htb-input w-full px-4 py-2 rounded-lg"
-            disabled
-          >
-            <option value="student">Student</option>
-          </select>
-          <p className="mt-1 text-xs text-htb-gray">
-            All new registrations are created as students. Contact admin for role changes.
-          </p>
-        </div>
+
 
         <button
           type="submit"
@@ -259,6 +471,7 @@ const Register = () => {
         </p>
       </div>
     </div>
+    </>
   );
 };
 

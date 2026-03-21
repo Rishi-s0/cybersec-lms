@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiCall, API_URL } from '../config/api';
 
 const AuthContext = createContext();
 
@@ -47,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           // Verify token with backend
-          const response = await fetch('/api/auth/verify', {
+          const response = await fetch(`${API_URL}/api/auth/verify`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
       // If token provided (from email verification), use it directly
       if (skipPasswordCheck && token) {
         // Verify the provided token
-        const response = await fetch('/api/auth/verify', {
+        const response = await fetch(`${API_URL}/api/auth/verify`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -97,7 +98,7 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Try real API login
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,11 +114,17 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
         return { success: true, user: data.user };
       } else {
-        const errorData = await response.json();
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          // If response body is not JSON, use default error
+          errorData = { message: 'Invalid credentials' };
+        }
         setLoading(false);
         return { 
           success: false, 
-          error: errorData.message || 'Login failed',
+          error: errorData.message || 'Invalid credentials',
           requiresVerification: errorData.requiresVerification,
           userId: errorData.userId,
           email: errorData.email
@@ -126,7 +133,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
       setLoading(false);
-      return { success: false, error: 'Network error. Please try again.' };
+      return { 
+        success: false, 
+        error: error.message || 'Network error. Please check your connection and try again.' 
+      };
     }
   };
 
@@ -135,7 +145,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

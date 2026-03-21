@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, CheckCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import API_URL from '../config/api';
+
+// Configure axios to use full backend URL
+const api = axios.create({
+  baseURL: API_URL
+});
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
@@ -21,7 +27,7 @@ const NotificationBell = () => {
     
     try {
       setLoading(true);
-      const response = await axios.get('/api/notifications?limit=10');
+      const response = await api.get('/api/notifications?limit=10');
       setNotifications(response.data.notifications);
       setUnreadCount(response.data.unreadCount);
     } catch (error) {
@@ -34,7 +40,7 @@ const NotificationBell = () => {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(`/api/notifications/${notificationId}/read`);
+      await api.put(`/api/notifications/${notificationId}/read`);
       setNotifications(prev => 
         prev.map(notif => 
           notif._id === notificationId 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
@@ -9,10 +9,22 @@ const Login = () => {
     password: '',
     rememberMe: false
   });
-  const [error, setError] = useState('');
+  
+  // Check for persisted error on mount
+  const persistedError = localStorage.getItem('loginError');
+  const [error, setError] = useState(persistedError || '');
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState({ google: false, github: false });
   const [validationErrors, setValidationErrors] = useState({});
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
+  // Clear persisted error when component mounts
+  React.useEffect(() => {
+    if (persistedError) {
+      // Keep error visible for screenshot
+      // User can click Close to clear it
+    }
+  }, []);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -53,35 +65,142 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (loading) {
+      console.log('Already loading, ignoring submission');
+      return;
+    }
+    
     setError('');
     setLoading(true);
 
-    const result = await login(formData.email, formData.password);
+    console.log('Login attempt with:', formData.email);
     
-    if (result.success) {
-      // Redirect based on user role
-      if (result.user.role === 'admin') {
-        navigate('/admin');
+    try {
+      const result = await login(formData.email, formData.password);
+      console.log('Login result:', result);
+      
+      if (result.success) {
+        // Redirect based on user role
+        if (result.user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+      } else if (result.requiresVerification) {
+        // Redirect to email verification
+        navigate('/verify-email', { 
+          state: { 
+            email: formData.email,
+            userId: result.userId 
+          } 
+        });
       } else {
-        navigate('/dashboard');
+        console.log('Setting error:', result.error);
+        const errorMessage = result.error || 'Login failed. Please try again.';
+        setLoading(false);
+        // Store error in localStorage to persist across remounts
+        localStorage.setItem('loginError', errorMessage);
+        setError(errorMessage);
+        setForceUpdate(prev => prev + 1);
       }
-    } else if (result.requiresVerification) {
-      // Redirect to email verification
-      navigate('/verify-email', { 
-        state: { 
-          email: formData.email,
-          userId: result.userId 
-        } 
-      });
-    } else {
-      setError(result.error || 'Login failed. Please try again.');
+    } catch (err) {
+      console.error('Caught error:', err);
+      setLoading(false);
+      setError('An unexpected error occurred. Please try again.');
+      setForceUpdate(prev => prev + 1); // Force re-render
     }
-    
-    setLoading(false);
   };
 
   return (
-    <div className="max-w-md mx-auto htb-card rounded-lg p-8">
+    <>
+      {/* Fixed Error Modal Overlay */}
+      {error && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            backgroundColor: '#0f1419',
+            border: '2px solid #ef4444',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '450px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: '50%',
+                padding: '0.75rem',
+                marginRight: '1rem'
+              }}>
+                <AlertCircle style={{ color: '#ef4444', width: '24px', height: '24px' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ 
+                  color: '#f3f4f6', 
+                  fontSize: '1.25rem', 
+                  fontWeight: '600', 
+                  margin: '0 0 0.5rem 0',
+                  letterSpacing: '-0.025em'
+                }}>
+                  Login Failed
+                </h3>
+                <p style={{ 
+                  color: '#ef4444', 
+                  margin: 0,
+                  fontSize: '0.95rem',
+                  lineHeight: '1.5'
+                }}>
+                  {error}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setError('');
+                localStorage.removeItem('loginError');
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.95rem',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#dc2626'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#ef4444'}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <div className="max-w-md mx-auto htb-card rounded-lg p-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-htb-gray-light matrix-text">Welcome Back</h2>
         <p className="text-htb-gray mt-2">Sign in to your account</p>
@@ -230,6 +349,7 @@ const Login = () => {
         </p>
       </div>
     </div>
+    </>
   );
 };
 

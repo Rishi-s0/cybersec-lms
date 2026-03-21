@@ -11,6 +11,7 @@ const HashPasswordCracker = ({ onClose }) => {
   const [progress, setProgress] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const isRunningRef = React.useRef(false);
 
   // Common passwords dictionary
   const commonPasswords = [
@@ -82,6 +83,7 @@ const HashPasswordCracker = ({ onClose }) => {
     }
 
     setIsRunning(true);
+    isRunningRef.current = true;
     setResult(null);
     setProgress(0);
     setAttempts(0);
@@ -94,7 +96,7 @@ const HashPasswordCracker = ({ onClose }) => {
       if (attackMode === 'dictionary') {
         // Dictionary attack
         for (let i = 0; i < commonPasswords.length; i++) {
-          if (!isRunning) break;
+          if (!isRunningRef.current) break;
           
           const password = commonPasswords[i];
           const hash = hashFunction(password);
@@ -117,7 +119,7 @@ const HashPasswordCracker = ({ onClose }) => {
           }
         }
 
-        if (isRunning) {
+        if (isRunningRef.current) {
           setResult({
             type: 'failure',
             message: 'Password not found in dictionary. Try brute force attack.',
@@ -135,7 +137,7 @@ const HashPasswordCracker = ({ onClose }) => {
           const lengthAttempts = Math.pow(charset.length, length);
           
           for (let i = 0; i < lengthAttempts; i++) {
-            if (!isRunning) break;
+            if (!isRunningRef.current) break;
             
             const password = generateBruteForcePassword(length, charset, i);
             const hash = hashFunction(password);
@@ -160,7 +162,7 @@ const HashPasswordCracker = ({ onClose }) => {
           }
         }
 
-        if (isRunning) {
+        if (isRunningRef.current) {
           setResult({
             type: 'failure',
             message: `Password not found in ${totalAttempts} attempts. Try a longer brute force or dictionary attack.`,
@@ -176,9 +178,11 @@ const HashPasswordCracker = ({ onClose }) => {
     }
 
     setIsRunning(false);
+    isRunningRef.current = false;
   };
 
   const stopCracking = () => {
+    isRunningRef.current = false;
     setIsRunning(false);
   };
 

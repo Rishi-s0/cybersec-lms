@@ -50,6 +50,7 @@ router.post('/register', [
       username,
       email,
       password,
+      name: username,                      // Set name to username by default
       role: userRole,                      // Always 'student' for security
       isEmailVerified: false,              // Require email verification
       emailVerificationOTP: otp,           // Store OTP for verification
@@ -101,7 +102,7 @@ router.post('/login', [
 
     // ✉️ CHECK EMAIL VERIFICATION: Block unverified users (manual registration only)
     if (!user.googleId && !user.githubId && !user.isEmailVerified) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Please verify your email before logging in',
         requiresVerification: true,
         userId: user._id,
@@ -139,7 +140,7 @@ router.get('/me', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     // ✅ SEND USER DATA: Return user information
     res.json({
       user: {
@@ -172,7 +173,7 @@ router.post('/verify-email', [
     const { email, otp } = req.body;
 
     // 🔍 FIND USER: Look for user with matching email, OTP, and valid expiry
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email,
       emailVerificationOTP: otp,
       emailVerificationExpires: { $gt: Date.now() }  // OTP not expired
@@ -227,7 +228,7 @@ router.post('/resend-verification', [
     const { email } = req.body;
 
     // 🔍 FIND UNVERIFIED USER: Only resend for unverified accounts
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email,
       isEmailVerified: false
     });

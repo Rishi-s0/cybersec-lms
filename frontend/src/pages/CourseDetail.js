@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import PaymentModal from '../components/PaymentModal'; // Import PaymentModal
+import PaymentModal from '../components/PaymentModal';
+import DiscussionForum from '../components/DiscussionForum';
 import {
   Clock,
   Users,
@@ -187,7 +188,7 @@ const CourseDetail = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-700 pb-1">
-        {['overview', 'lessons'].map(tab => (
+        {['overview', 'lessons', 'discussion'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -236,22 +237,46 @@ const CourseDetail = () => {
               return (
                 <div key={lesson.lessonId} className={`htb-card p-4 flex items-center justify-between ${isLocked ? 'opacity-50' : ''}`}>
                   <div className="flex items-center gap-4">
-                    {isLocked ? <Lock className="w-6 h-6 text-gray-500" /> : <Play className="w-6 h-6 text-htb-green" />}
+                    {isLocked ? (
+                      <Lock className="w-6 h-6 text-gray-500" />
+                    ) : isCompleted ? (
+                      <CheckCircle className="w-6 h-6 text-htb-green" />
+                    ) : (
+                      <Play className="w-6 h-6 text-htb-green" />
+                    )}
                     <div>
                       <h4 className="text-white font-bold">{lesson.title}</h4>
-                      <div className="text-xs text-gray-500">{lesson.duration} mins</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">{lesson.duration} mins</span>
+                        {isCompleted && <span className="text-xs text-htb-green font-medium">✓ Completed</span>}
+                      </div>
                     </div>
                   </div>
                   <div>
                     {enrolled && !isLocked && (
-                      <Link to={`/courses/${id}/lesson/${lesson.lessonId}`} className="htb-btn text-xs px-4 py-2">
-                        Start
+                      <Link to={`/courses/${id}/lesson/${lesson.lessonId}`} className={`text-xs px-4 py-2 rounded ${isCompleted ? 'htb-btn opacity-70' : 'htb-btn-primary'}`}>
+                        {isCompleted ? 'Review' : 'Start'}
                       </Link>
                     )}
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {activeTab === 'discussion' && (
+          <div>
+            {enrolled ? (
+              <DiscussionForum courseId={id} />
+            ) : (
+              <div className="htb-card p-8 text-center">
+                <p className="text-htb-gray mb-4">Enroll in this course to access the discussion forum</p>
+                <button onClick={handleEnroll} className="htb-btn-primary px-6 py-2 rounded-lg">
+                  Enroll Now
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

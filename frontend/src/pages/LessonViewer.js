@@ -8,6 +8,7 @@ import {
   Lock,
   Clock,
   HelpCircle,
+  AlertCircle,
   Send,
   Home,
   BookOpen,
@@ -44,11 +45,7 @@ const LessonViewer = () => {
   const [editingNoteContent, setEditingNoteContent] = useState('');
 
   useEffect(() => {
-    fetchCourseAndLesson();
-    fetchProgress();
-    fetchNotes();
-    
-    // Reset all state when lesson changes
+    // Reset state when lesson changes, then fetch fresh data
     setVideoProgress(0);
     setVideoWatched(false);
     setQuizAnswers({});
@@ -56,6 +53,11 @@ const LessonViewer = () => {
     setQuizResults(null);
     setQuizPassed(false);
     setQuizStarted(false);
+    setCanMarkWatched(false);
+
+    fetchCourseAndLesson();
+    fetchProgress();
+    fetchNotes();
   }, [courseId, lessonId]);
 
   // No timer needed - video progress tracking handles everything!
@@ -162,6 +164,14 @@ const LessonViewer = () => {
       if (response.ok) {
         const progressData = await response.json();
         setProgress(progressData);
+
+        // If this lesson is already completed, unlock quiz and mark video as watched
+        const alreadyCompleted = progressData?.completedLessons?.some(l => l.lessonId === lessonId);
+        if (alreadyCompleted) {
+          setVideoWatched(true);
+          setVideoProgress(100);
+          setCanMarkWatched(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching progress:', error);
@@ -629,14 +639,24 @@ const LessonViewer = () => {
 
                   <div className="p-4 border-t border-htb-gray-dark/30">
                     {!quizSubmitted ? (
-                      <button
-                        onClick={submitQuiz}
-                        disabled={Object.keys(quizAnswers).length < currentLesson.quiz.length}
-                        className="htb-btn-primary px-6 py-2 rounded-lg flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Send className="h-4 w-4" />
-                        <span>Submit Quiz</span>
-                      </button>
+                      <div>
+                        {Object.keys(quizAnswers).length < currentLesson.quiz.length && (
+                          <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center space-x-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-500" />
+                            <span className="text-yellow-500 text-sm">
+                              Please answer all {currentLesson.quiz.length} questions before submitting ({Object.keys(quizAnswers).length}/{currentLesson.quiz.length} answered)
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          onClick={submitQuiz}
+                          disabled={Object.keys(quizAnswers).length < currentLesson.quiz.length}
+                          className="htb-btn-primary px-6 py-2 rounded-lg flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Send className="h-4 w-4" />
+                          <span>Submit Quiz</span>
+                        </button>
+                      </div>
                     ) : (
                       <div className={`p-4 rounded-lg ${quizResults?.passed
                         ? 'bg-htb-green/10 border border-htb-green/30'
