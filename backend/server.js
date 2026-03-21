@@ -5,8 +5,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load environment variables FIRST - look in root directory
+// Load environment variables - works both locally and on Render
 dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config(); // fallback for Render (env vars injected directly)
 
 const passport = require('./config/passport');
 
@@ -86,11 +87,16 @@ io.on('connection', (socket) => {
 
 // MongoDB connection with better error handling
 const connectDB = async () => {
+  const uri = process.env.MONGODB_URI;
+  console.log('MONGODB_URI present:', !!uri);
+  if (!uri) {
+    console.error('MONGODB_URI is not set! Check environment variables on Render.');
+    setTimeout(connectDB, 10000);
+    return;
+  }
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/cybersec-lms', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
     });
     console.log('Connected to MongoDB');
@@ -138,16 +144,12 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Cybersecurity LMS API is running!' });
 });
 
-// Serve static files from React build in production
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
-  
-  // Serve static files from the React app build directory
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
-  
-  // Handle React routing, return all requests to React app
+// Serve static files from React build in production (only if build exists)
+if (process.env.NODE_ENV === 'production' && process.env.SERVE_FRONTEND === 'true') {
+  const buildPath = path.join(__dirname, '../frontend/build');
+  app.use(express.static(buildPath));
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+    res.sendFile(path.join(buildPath, 'index.html'));
   });
 }
 
