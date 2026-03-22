@@ -13,6 +13,11 @@ const sendVerificationEmail = async (email, otp) => {
   console.log(`To: ${email}`);
   console.log(`OTP Code: ${otp}\n`);
 
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.log('⚠️ Warning: GMAIL credentials not configured in environment. Skipping email dispatch to prevent connection hang.');
+    return { success: true };
+  }
+
   try {
     await transporter.sendMail({
       from: `Hackademy <${process.env.GMAIL_USER}>`,
@@ -62,6 +67,11 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   console.log(`\n📧 PASSWORD RESET`);
   console.log(`To: ${email}`);
   console.log(`Reset URL: ${resetUrl}\n`);
+
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.log('⚠️ Warning: GMAIL credentials not configured in environment. Skipping email dispatch to prevent connection hang.');
+    return { success: true };
+  }
 
   try {
     await transporter.sendMail({
