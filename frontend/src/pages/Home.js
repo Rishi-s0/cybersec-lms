@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Lock, Globe, Users, Award, BookOpen, Map } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const Home = () => {
   const [liveStats, setLiveStats] = useState({
@@ -14,7 +15,7 @@ const Home = () => {
   const fetchLiveStats = async () => {
     try {
       console.log('Attempting to fetch live stats...');
-      const response = await fetch('/api/threats/stats');
+      const response = await fetch(`${API_URL}/api/threats/stats`);
       if (response.ok) {
         const data = await response.json();
         console.log('Received live stats:', data);

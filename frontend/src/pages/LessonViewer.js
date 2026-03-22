@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config/api';
 import {
   ChevronLeft,
   ChevronRight,
@@ -136,7 +137,7 @@ const LessonViewer = () => {
 
   const fetchCourseAndLesson = async () => {
     try {
-      const response = await fetch(`/api/courses/${courseId}`);
+      const response = await fetch(`${API_URL}/api/courses/${courseId}`);
       if (response.ok) {
         const courseData = await response.json();
         setCourse(courseData);
@@ -155,7 +156,7 @@ const LessonViewer = () => {
 
   const fetchProgress = async () => {
     try {
-      const response = await fetch(`/api/progress/detailed/${courseId}`, {
+      const response = await fetch(`${API_URL}/api/progress/detailed/${courseId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -239,7 +240,7 @@ const LessonViewer = () => {
   const fetchNotes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notes/lesson/${courseId}/${lessonId}`, {
+      const response = await fetch(`${API_URL}/api/notes/lesson/${courseId}/${lessonId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -258,7 +259,7 @@ const LessonViewer = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/notes', {
+      const response = await fetch(`${API_URL}/api/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,7 +288,7 @@ const LessonViewer = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notes/${noteId}`, {
+      const response = await fetch(`${API_URL}/api/notes/${noteId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -314,7 +315,7 @@ const LessonViewer = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notes/${noteId}`, {
+      const response = await fetch(`${API_URL}/api/notes/${noteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -335,7 +336,7 @@ const LessonViewer = () => {
 
   const completeLesson = async () => {
     try {
-      const response = await fetch(`/api/progress/lesson/${courseId}/${lessonId}/complete`, {
+      const response = await fetch(`${API_URL}/api/progress/lesson/${courseId}/${lessonId}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

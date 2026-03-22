@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Clock, Star, Users } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const Courses = () => {
   const [filters, setFilters] = useState({
@@ -19,7 +20,7 @@ const Courses = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/courses');
+      const response = await fetch(`${API_URL}/api/courses`);
       if (response.ok) {
         const coursesData = await response.json();
         setCourses(coursesData);

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentModal from '../components/PaymentModal';
 import DiscussionForum from '../components/DiscussionForum';
+import { API_URL } from '../config/api';
 import {
   Clock,
   Users,
@@ -49,14 +50,108 @@ const CourseDetail = () => {
     window.onYouTubeIframeAPIReady = () => console.log('YouTube IFrame API ready');
   }, []);
 
+  const staticCourses = [
+    {
+      _id: '1',
+      title: 'Introduction to Cybersecurity',
+      description: 'Learn the fundamentals of cybersecurity including threat landscape, security principles, and basic defense mechanisms.',
+      estimatedDuration: 8,
+      price: 0,
+      learningObjectives: ['Understand basic cybersecurity terminology', 'Identify common threats', 'Learn defense mechanisms'],
+      prerequisites: ['Basic computer literacy'],
+      lessons: [
+        { lessonId: 'l1-1', title: 'What is Cybersecurity?', duration: 15 },
+        { lessonId: 'l1-2', title: 'Threat Landscape', duration: 25 },
+        { lessonId: 'l1-3', title: 'Defense Basics', duration: 30 }
+      ]
+    },
+    {
+      _id: '2',
+      title: 'Network Security Fundamentals',
+      description: 'Master network security concepts, firewalls, intrusion detection systems, and network monitoring techniques.',
+      estimatedDuration: 12,
+      price: 49.99,
+      learningObjectives: ['Configure firewalls', 'Understand IDS/IPS concepts', 'Network monitoring basics'],
+      prerequisites: ['Basic networking knowledge'],
+      lessons: [
+        { lessonId: 'l2-1', title: 'Network Basics Review', duration: 20 },
+        { lessonId: 'l2-2', title: 'Firewall Configuration', duration: 40 },
+        { lessonId: 'l2-3', title: 'IDS/IPS Systems', duration: 45 }
+      ]
+    },
+    {
+      _id: '3',
+      title: 'Ethical Hacking and Penetration Testing',
+      description: 'Advanced course covering ethical hacking methodologies, penetration testing frameworks, and vulnerability assessment.',
+      estimatedDuration: 20,
+      price: 99.99,
+      learningObjectives: ['Conduct vulnerability assessments', 'Learn penetration testing frameworks', 'Ethical hacking methodologies'],
+      prerequisites: ['Network Security Fundamentals', 'Basic Linux command line'],
+      lessons: [
+        { lessonId: 'l3-1', title: 'Reconnaissance Phase', duration: 30 },
+        { lessonId: 'l3-2', title: 'Scanning and Enumeration', duration: 45 },
+        { lessonId: 'l3-3', title: 'Exploitation Basics', duration: 60 }
+      ]
+    },
+    {
+      _id: '4',
+      title: 'Web Application Security',
+      description: 'Learn to secure web applications against OWASP Top 10 vulnerabilities and modern attack vectors.',
+      estimatedDuration: 15,
+      price: 79.99,
+      learningObjectives: ['Understand OWASP Top 10', 'Identify XSS and SQLi', 'Secure web applications'],
+      prerequisites: ['Basic web development (HTML, JS)', 'Understanding of HTTP protocol'],
+      lessons: [
+        { lessonId: 'l4-1', title: 'OWASP Top 10 Overview', duration: 25 },
+        { lessonId: 'l4-2', title: 'Cross-Site Scripting (XSS)', duration: 35 },
+        { lessonId: 'l4-3', title: 'SQL Injection', duration: 40 }
+      ]
+    },
+    {
+      _id: '5',
+      title: 'Digital Forensics Investigation',
+      description: 'Master digital forensics techniques for incident response and cybercrime investigation.',
+      estimatedDuration: 18,
+      price: 89.99,
+      learningObjectives: ['Perform digital forensics', 'Incident response handling', 'Cybercrime investigation techniques'],
+      prerequisites: ['Basic operating system internals'],
+      lessons: [
+        { lessonId: 'l5-1', title: 'Introduction to Forensics', duration: 20 },
+        { lessonId: 'l5-2', title: 'Disk Imaging and Analysis', duration: 50 },
+        { lessonId: 'l5-3', title: 'Memory Forensics', duration: 45 }
+      ]
+    },
+    {
+      _id: '6',
+      title: 'Cryptography and Data Protection',
+      description: 'Understand cryptographic algorithms, key management, and data protection strategies.',
+      estimatedDuration: 14,
+      price: 59.99,
+      learningObjectives: ['Understand symmetric vs asymmetric encryption', 'Key management principles', 'Data protection strategies'],
+      prerequisites: ['Basic mathematics knowledge'],
+      lessons: [
+        { lessonId: 'l6-1', title: 'History of Cryptography', duration: 15 },
+        { lessonId: 'l6-2', title: 'Symmetric Encryption', duration: 35 },
+        { lessonId: 'l6-3', title: 'Asymmetric Encryption Data', duration: 40 }
+      ]
+    }
+  ];
+
   const fetchCourseData = async () => {
     try {
-      const response = await fetch(`/api/courses/${id}`);
+      const response = await fetch(`${API_URL}/api/courses/${id}`);
       if (response.ok) {
         setCourse(await response.json());
+      } else {
+        throw new Error('Course not found on server');
       }
     } catch (error) {
       console.error('Error fetching course:', error);
+      // Fallback to static data
+      const staticCourse = staticCourses.find(c => c._id === id);
+      if (staticCourse) {
+        setCourse(staticCourse);
+      }
     } finally {
       setLoading(false);
     }
@@ -64,7 +159,7 @@ const CourseDetail = () => {
 
   const fetchProgress = async () => {
     try {
-      const response = await fetch(`/api/progress/detailed/${id}`, {
+      const response = await fetch(`${API_URL}/api/progress/detailed/${id}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (response.ok) {
@@ -106,7 +201,7 @@ const CourseDetail = () => {
     if (enrolling) return;
     setEnrolling(true);
     try {
-      const response = await fetch(`/api/courses/${id}/enroll`, {
+      const response = await fetch(`${API_URL}/api/courses/${id}/enroll`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
@@ -130,7 +225,7 @@ const CourseDetail = () => {
     if (!window.confirm('Are you sure? All progress will be lost.')) return;
     setEnrolling(true);
     try {
-      const response = await fetch(`/api/courses/${id}/unenroll`, {
+      const response = await fetch(`${API_URL}/api/courses/${id}/unenroll`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });

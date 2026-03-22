@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Clock, Award, TrendingUp, Play } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config/api';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ const Dashboard = () => {
   const fetchProgressData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/progress/dashboard', {
+      const response = await fetch(`${API_URL}/api/progress/dashboard`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -63,7 +64,7 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await fetch(`/api/courses/${courseId}/unenroll`, {
+      const response = await fetch(`${API_URL}/api/courses/${courseId}/unenroll`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
