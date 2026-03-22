@@ -182,8 +182,17 @@ router.get('/pdf/:certificateId', async (req, res) => {
       console.log('PDF generated and sent successfully');
     } catch (err) {
       console.error('Error generating PDF:', err);
-      // Fallback to HTML if PDF generation fails (e.g. puppeteer issue)
-      res.status(500).send('Error generating certificate PDF. Please contact support.');
+      // Fallback to HTML if PDF generation fails (e.g. puppeteer missing dependencies on Render)
+      res.status(500).send(`
+        ${html}
+        <script>
+          window.onload = function() {
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          };
+        </script>
+      `);
     }
 
   } catch (error) {

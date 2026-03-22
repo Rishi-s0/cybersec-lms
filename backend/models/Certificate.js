@@ -163,9 +163,13 @@ certificateSchema.statics.generateCertificate = async function (userId, courseId
   const certificate = new this({
     user: userId,
     course: courseId,
-    studentName: `${user.profile.firstName} ${user.profile.lastName}`,
+    studentName: user.profile && user.profile.firstName 
+      ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim()
+      : user.name || user.username,
     courseName: course.title,
-    instructorName: `${instructor.profile.firstName} ${instructor.profile.lastName}`,
+    instructorName: instructor.profile && instructor.profile.firstName
+      ? `${instructor.profile.firstName} ${instructor.profile.lastName || ''}`.trim()
+      : instructor.name || instructor.username,
     completedAt: progressData.completedAt,
     finalScore: progressData.averageQuizScore || 100,
     totalTimeSpent: Math.round(progressData.totalTimeSpent / 60), // convert to hours
