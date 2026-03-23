@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 import {
   User, Mail, Save, AlertCircle, CheckCircle,
   StickyNote, Trash2, BookOpen, Calendar,
@@ -90,7 +91,7 @@ const Profile = () => {
   const fetchAllNotes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/notes', {
+      const response = await fetch(`${API_URL}/api/notes`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -135,7 +136,7 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/notes/${noteId}`, {
+      const response = await fetch(`${API_URL}/api/notes/${noteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

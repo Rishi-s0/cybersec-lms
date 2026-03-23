@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, Lock, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 // Initialize Stripe outside component to avoid recreation
 const stripeKey = process.env.REACT_APP_STRIPE_KEY;
@@ -18,7 +19,7 @@ const CheckoutForm = ({ course, onSuccess, onCancel }) => {
 
     useEffect(() => {
         // Create PaymentIntent as soon as the page loads
-        fetch('/api/payments/create-payment-intent', {
+        fetch(`${API_URL}/api/payments/create-payment-intent`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -48,7 +49,7 @@ const CheckoutForm = ({ course, onSuccess, onCancel }) => {
             setTimeout(async () => {
                 // Call mock confirmation endpoint
                 try {
-                    const res = await fetch('/api/payments/confirm-mock-payment', {
+                    const res = await fetch(`${API_URL}/api/payments/confirm-mock-payment`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -99,7 +100,7 @@ const CheckoutForm = ({ course, onSuccess, onCancel }) => {
                     // Payment successful - calling enrollment endpoint (or webhook handles it)
                     // For this implementation, we will assume webhook handles it or allow client to call enroll
                     // But usually we call backend to verify.
-                    await fetch(`/api/courses/${course._id}/enroll`, {
+                    await fetch(`${API_URL}/api/courses/${course._id}/enroll`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('token')}`

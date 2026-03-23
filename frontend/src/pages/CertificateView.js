@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Download, ArrowLeft, Printer, Share2 } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const CertificateView = () => {
     const { id } = useParams();
@@ -18,7 +19,7 @@ const CertificateView = () => {
 
     const fetchCertificate = async () => {
         try {
-            const response = await fetch(`/api/certificates/${id}`, {
+            const response = await fetch(`${API_URL}/api/certificates/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }

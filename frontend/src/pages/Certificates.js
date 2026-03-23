@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Award, Eye, ExternalLink, Calendar, Clock, CheckCircle } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const Certificates = () => {
     const { user } = useAuth();
@@ -17,7 +18,7 @@ const Certificates = () => {
 
     const fetchCertificates = async () => {
         try {
-            const response = await fetch('/api/certificates', {
+            const response = await fetch(`${API_URL}/api/certificates`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }

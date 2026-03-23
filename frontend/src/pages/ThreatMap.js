@@ -14,6 +14,7 @@ import {
   Target,
   Skull
 } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const ThreatMap = () => {
   const mapRef = useRef(null);
@@ -129,7 +130,7 @@ const ThreatMap = () => {
     setThreatStats(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const response = await fetch('/api/threats');
+      const response = await fetch(`${API_URL}/api/threats`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

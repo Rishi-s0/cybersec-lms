@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { User, Shield, Award, Calendar, ExternalLink, MapPin, Briefcase } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const PublicProfile = () => {
     const { username } = useParams();
@@ -15,7 +16,7 @@ const PublicProfile = () => {
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/users/public/${username}`);
+            const response = await fetch(`${API_URL}/api/users/public/${username}`);
 
             if (!response.ok) {
                 if (response.status === 404) throw new Error('User not found');
