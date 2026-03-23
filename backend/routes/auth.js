@@ -59,8 +59,10 @@ router.post('/register', [
 
     await user.save();
 
-    // 📧 SEND VERIFICATION EMAIL: Email OTP to user
-    await sendVerificationEmail(email, otp);
+    // 📧 SEND VERIFICATION EMAIL: Email OTP to user (non-blocking)
+    sendVerificationEmail(email, otp).catch(err => 
+      console.error('Email send failed:', err.message)
+    );
 
     res.status(201).json({
       message: 'Registration successful! Please check your email for verification code.',
@@ -246,8 +248,10 @@ router.post('/resend-verification', [
     user.emailVerificationExpires = otpExpiry;
     await user.save();
 
-    // 📧 SEND EMAIL: Email new OTP to user
-    await sendVerificationEmail(email, otp);
+    // 📧 SEND EMAIL: Email new OTP to user (non-blocking)
+    sendVerificationEmail(email, otp).catch(err =>
+      console.error('Email send failed:', err.message)
+    );
 
     res.json({ message: 'Verification code resent successfully!' });
   } catch (error) {
@@ -286,8 +290,10 @@ router.post('/forgot-password', [
     user.resetPasswordExpires = resetTokenExpiry;
     await user.save();
 
-    // 📧 SEND EMAIL: Email reset link to user
-    await sendPasswordResetEmail(email, resetToken);
+    // 📧 SEND EMAIL: Email reset link to user (non-blocking)
+    sendPasswordResetEmail(email, resetToken).catch(err =>
+      console.error('Email send failed:', err.message)
+    );
 
     res.json({ message: 'If an account with that email exists, we have sent a password reset link.' });
   } catch (error) {
