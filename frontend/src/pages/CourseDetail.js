@@ -327,7 +327,7 @@ const CourseDetail = () => {
           <div className="space-y-4">
             {course.lessons?.map((lesson, index) => {
               const isCompleted = isLessonCompleted(lesson.lessonId);
-              const isLocked = !enrolled && index > 0; // Simplified locking logic
+              const isLocked = !enrolled && index > 0;
 
               return (
                 <div key={lesson.lessonId} className={`htb-card p-4 flex items-center justify-between ${isLocked ? 'opacity-50' : ''}`}>
@@ -357,6 +357,39 @@ const CourseDetail = () => {
                 </div>
               );
             })}
+
+            {/* Certificate claim section */}
+            {enrolled && progress && progress.completedLessons?.length === course.lessons?.length && (
+              <div className="htb-card p-6 border border-htb-green text-center mt-4">
+                <Trophy className="w-12 h-12 text-htb-green mx-auto mb-3" />
+                <h3 className="text-white font-bold text-xl mb-2">Course Completed!</h3>
+                <p className="text-gray-400 mb-4">You've completed all lessons. Claim your certificate now.</p>
+                {progress.certificate?.issued ? (
+                  <Link to={`/certificates/${progress.certificate.certificateId}`} className="htb-btn-primary px-6 py-2 rounded-lg inline-block">
+                    View Certificate
+                  </Link>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      const res = await fetch(`${API_URL}/api/progress/claim-certificate/${id}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        alert('Certificate generated!');
+                        fetchProgress();
+                      } else {
+                        alert(data.message);
+                      }
+                    }}
+                    className="htb-btn-primary px-6 py-2 rounded-lg"
+                  >
+                    Claim Certificate
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 

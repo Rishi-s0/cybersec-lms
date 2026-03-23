@@ -323,7 +323,8 @@ async function checkCertificateEligibility(progress, course) {
   const passedQuizzes = progress.quizzesCompleted.filter(q => q.passed).length;
 
   const allLessonsCompleted = completedLessons === totalLessons;
-  const allQuizzesPassed = passedQuizzes === totalQuizzes;
+  // Certificate requires all lessons completed; quizzes are optional bonus
+  const allQuizzesPassed = totalQuizzes === 0 || passedQuizzes === totalQuizzes;
   // const minimumTimeSpent = progress.timeSpent >= (course.estimatedDuration * 60 * 0.8); // Disabled for easier testing
 
   console.log(`Checking Certificate Eligibility for User ${progress.user}:`);
@@ -369,5 +370,44 @@ async function checkCertificateEligibility(progress, course) {
     console.log('Certificate conditions not met yet.');
   }
 }
+
+// Manually claim certificate after course completion
+router.post('/claim-certificate/:courseId', auth, async (req, res) => {
+  try {
+    const progress = await Progress.findOne({
+      user: req.userId,
+      course: req.params.courseId
+    });
+
+    if (!progress) return res.status(404).json({ message: 'Progress not found' });
+
+    const course = await Course.findById(req.params.courseId);
+    const totalLessons = course.lessons.length;
+    const completedLessons = progress.completedLessons.length;
+
+    if (completedLessons < totalLessons) {
+      return res.status(400).json({ 
+        message: `Complete all lessons first (${completedLessons}/${totalLessons} done)` 
+      });
+    }
+
+    if (progress.certificate && progress.certificate.issued) {
+      return res.json({ 
+        message: 'Certificate already issued', 
+        certificateId: progress.certificate.certificateId 
+      });
+    }
+
+    await checkCertificateEligibility(progress, course);
+
+    const updatedProgress = await Progress.findOne({ user: req.userId, course: req.params.courseId });
+    res.json({ 
+      message: 'Certificate generated!', 
+      certificateId: updatedProgress.certificate?.certificateId 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 module.exports = router;
