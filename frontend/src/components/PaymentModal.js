@@ -121,7 +121,7 @@ const CheckoutForm = ({ course, onSuccess, onCancel }) => {
                 <h3 className="text-white font-bold mb-2">{course.title}</h3>
                 <div className="flex justify-between text-gray-400 text-sm">
                     <span>Price</span>
-                    <span className="text-white font-bold">${course.price}</span>
+                    <span className="text-white font-bold">₹{course.price}</span>
                 </div>
             </div>
 
@@ -169,7 +169,7 @@ const CheckoutForm = ({ course, onSuccess, onCancel }) => {
                 ) : (
                     <>
                         <Lock className="h-4 w-4" />
-                        Pay ${course.price}
+                        Pay ₹{course.price}
                     </>
                 )}
             </button>

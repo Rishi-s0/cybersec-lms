@@ -271,7 +271,7 @@ const CourseDetail = () => {
               {enrolled ? (
                 <><CheckCircle className="w-5 h-5" /> Already Enrolled</>
               ) : enrolling ? 'Processing...' : (
-                course.price > 0 ? `Enroll for $${course.price}` : 'Enroll Now'
+                course.price > 0 ? `Enroll for ₹${course.price}` : 'Enroll Now'
               )}
             </button>
             {enrolled && (
